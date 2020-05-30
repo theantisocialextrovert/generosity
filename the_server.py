@@ -200,9 +200,10 @@ class reverse_shell_server:
                 print prompt+output
     def close_conn(self):
         self.server_sock.close()
-                
-obj = reverse_shell_server()
-obj.establish_connection()
-obj.load_rev_shell()
-obj.close_conn()
+
+if __name__ == '__main__':
+    obj = reverse_shell_server()
+    obj.establish_connection()
+    obj.load_rev_shell()
+    obj.close_conn()
 

